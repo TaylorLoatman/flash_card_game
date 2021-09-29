@@ -6,10 +6,16 @@ BACKGROUND_COLOR = "#B1DDC6"
 the_card = {}
 
 # ---------------------------- Switch Cards ------------------------------- #
-data = pandas.read_csv("data/french_words.csv")
-to_learn = data.to_dict(orient='records')
+try:
+    data = pandas.read_csv("data/words_to_learn.csv")
+except FileNotFoundError:
+    original_data = pandas.read_csv("data/french_words.csv")
+    to_learn = original_data.to_dict(orient='records')
+else:
+    to_learn = data.to_dict(orient='records')
 
-def switch():
+
+def next_card():
     global the_card, flip_timer
     window.after_cancel(flip_timer)
     the_card = random.choice(to_learn)
@@ -19,11 +25,19 @@ def switch():
     flip_timer = window.after(3000, func=flip_card)
 
 # ---------------------------- Flip Card ------------------------------- #
+
 def flip_card():
     global the_card
     canvas.itemconfig(title_text, fill="white", text="English")
     canvas.itemconfig(word_text, fill="white", text=the_card["English"])
     canvas.itemconfig(canvas_image, image=back_img)
+
+# ---------------------------- Words Known ------------------------------- #
+def is_known():
+    to_learn.remove(the_card)
+    data = pandas.DataFrame(to_learn)
+    data.to_csv("data/words_to_learn.csv", index=False)
+    next_card()
 
 # ---------------------------- UI SETUP ------------------------------- #
 
@@ -42,13 +56,13 @@ word_text = canvas.create_text(400, 263, text="", font=("Arial", 60, "bold"))
 canvas.grid(column=0, row=0, columnspan=2)
 
 correct_img = PhotoImage(file='images/right.png')
-correct_button = Button(image=correct_img, highlightthickness=0, command=switch)
+correct_button = Button(image=correct_img, highlightthickness=0, command=next_card)
 correct_button.grid(column=0, row=1)
 
 wrong_img = PhotoImage(file='images/wrong.png')
-wrong_button = Button(image=wrong_img, highlightthickness=0, command=switch)
+wrong_button = Button(image=wrong_img, highlightthickness=0, command=is_known)
 wrong_button.grid(column=1, row=1)
 
-switch()
+next_card()
 
 window.mainloop()
